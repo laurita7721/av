@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="theme-color" content="#0d0f14"/>
+  <title>AscoltoVivo</title>
+  <style>
+    :root {
+      --bg:#0d0f14; --surface:#161a23; --surface2:#1e2330;
+      --border:#2a3040; --accent:#4fffb0; --accentDim:#1a4d3a;
+      --text:#e8edf5; --textDim:#6b7a96; --textMuted:#3d4a60;
+      --interim:#7dd4fc; --danger:#ff6b6b;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',sans-serif}
+    body{display:flex;flex-direction:column}
+    header{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
+    .logo{display:flex;align-items:center;gap:9px}
+    .logo-icon{width:34px;height:34px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:17px}
+    .logo-text{font-size:1.1rem;font-weight:700;letter-spacing:-.03em}
+    .logo-text b{color:var(--accent)}
+    .font-controls{display:flex;align-items:center;gap:5px}
+    .font-lbl{font-size:10px;color:var(--textMuted)}
+    .font-btn{width:28px;height:28px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);color:var(--textDim);cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700}
+    .lang-row{display:flex;gap:6px;overflow-x:auto;padding:9px 16px;border-bottom:1px solid var(--border);flex-shrink:0;scrollbar-width:none}
+    .lang-row::-webkit-scrollbar{display:none}
+    .lang-btn{flex-shrink:0;padding:5px 13px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--textDim);font-size:12px;cursor:pointer}
+    .lang-btn.on{background:var(--accentDim);border-color:var(--accent);color:var(--accent);font-weight:700}
+    #box-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;background:var(--surface)}
+    #box{flex:1;overflow-y:auto;padding:18px;font-size:24px;line-height:1.65;-webkit-overflow-scrolling:touch;word-break:break-word;user-select:text}
+    #box:empty::before{content:"Premi il pulsante e inizia a parlare…";color:var(--textMuted);font-size:1rem;font-weight:300}
+    .ft{color:var(--text)}
+    .it{color:var(--interim);font-style:italic;opacity:.85}
+    #wave{height:42px;display:flex;align-items:center;gap:3px;padding:0 16px;border-top:1px solid var(--border);flex-shrink:0}
+    .wb{flex:1;max-width:5px;border-radius:2px;background:var(--textMuted);height:4px;transition:height .09s ease}
+    .wb.on{background:var(--accent)}
+    .status{display:flex;align-items:center;gap:8px;padding:8px 18px;background:var(--surface2);border-top:1px solid var(--border);flex-shrink:0}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--textMuted);flex-shrink:0;transition:background .3s}
+    .dot.on{background:var(--accent);animation:blink 1.2s ease-in-out infinite}
+    .dot.err{background:var(--danger)}
+    .smsg{flex:1;font-size:12px;color:var(--textDim)}
+    .stimer{font-size:12px;color:var(--textMuted);font-variant-numeric:tabular-nums}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+    #debug{font-size:11px;color:#4fffb066;padding:5px 18px;background:var(--bg);flex-shrink:0;font-family:monospace;min-height:22px}
+    .bottom{display:flex;align-items:center;gap:10px;padding:12px 18px 20px;background:var(--bg);border-top:1px solid var(--border);flex-shrink:0}
+    #btn-rec{flex:1;height:62px;border-radius:16px;border:none;background:var(--accent);color:var(--bg);font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+    #btn-rec:active{opacity:.85}
+    #btn-rec.rec{background:var(--danger);color:#fff;animation:pulse 2s ease-in-out infinite}
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,107,107,.4)}50%{box-shadow:0 0 0 10px rgba(255,107,107,0)}}
+    .btn-sq{width:62px;height:62px;border-radius:16px;background:var(--surface);border:1px solid var(--border);color:var(--textDim);font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .btn-sq:active{opacity:.7}
+    #toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 18px;border-radius:10px;font-size:13px;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;z-index:1000}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    #perm-screen{display:none;position:fixed;inset:0;background:var(--bg);z-index:500;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;gap:20px}
+    #perm-screen.show{display:flex}
+    #perm-screen .big{font-size:4rem}
+    #perm-screen h2{font-size:1.3rem;color:var(--text)}
+    #perm-screen p{font-size:.9rem;color:var(--textDim);line-height:1.6}
+    #btn-perm{background:var(--accent);color:var(--bg);border:none;border-radius:14px;padding:14px 28px;font-size:1rem;font-weight:700;cursor:pointer;margin-top:8px}
+  </style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-icon">👂</div>
+    <div class="logo-text">Ascolto<b>Vivo</b></div>
+  </div>
+  <div class="font-controls">
+    <span class="font-lbl">Testo</span>
+    <button class="font-btn" id="fd" style="font-size:10px">A</button>
+    <button class="font-btn" id="fu" style="font-size:16px">A</button>
+  </div>
+</header>
+<div class="lang-row" id="langs">
+  <button class="lang-btn on" data-l="it-IT">🇮🇹 Italiano</button>
+  <button class="lang-btn" data-l="en-US">🇬🇧 English</button>
+  <button class="lang-btn" data-l="fr-FR">🇫🇷 Français</button>
+  <button class="lang-btn" data-l="de-DE">🇩🇪 Deutsch</button>
+  <button class="lang-btn" data-l="es-ES">🇪🇸 Español</button>
+  <button class="lang-btn" data-l="pt-BR">🇧🇷 Português</button>
+</div>
+<div id="box-wrap">
+  <div id="box" aria-live="assertive"></div>
+  <div id="wave"></div>
+</div>
+<div class="status">
+  <div class="dot" id="dot"></div>
+  <span class="smsg" id="smsg">In attesa…</span>
+  <span class="stimer" id="stimer">00:00</span>
+</div>
+<div id="debug">⏳ Avvio…</div>
+<div class="bottom">
+  <button class="btn-sq" id="btn-clr">🗑️</button>
+  <button id="btn-rec">
+    <span id="rec-ico">🎙️</span>
+    <span id="rec-lbl">Avvia Ascolto</span>
+  </button>
+  <button class="btn-sq" id="btn-cpy">📋</button>
+</div>
+<div id="perm-screen">
+  <div class="big">🎙️</div>
+  <h2>Permesso Microfono</h2>
+  <p>AscoltoVivo ha bisogno del microfono.<br><br>Tocca il bottone e poi <strong>"Consenti"</strong> sul popup.</p>
+  <button id="btn-perm">Concedi permesso →</button>
+  <p id="perm-err" style="color:var(--danger);font-size:.85rem;display:none"></p>
+</div>
+<div id="toast"></div>
+
+<script>
+const dbg = t => document.getElementById('debug').textContent = t;
+
+// Waveform
+const waveEl = document.getElementById('wave');
+for(let i=0;i<36;i++){const b=document.createElement('div');b.className='wb';waveEl.appendChild(b);}
+const bars = waveEl.querySelectorAll('.wb');
+let waveTimer=null;
+function animWave(on){
+  clearInterval(waveTimer);
+  if(on){waveTimer=setInterval(()=>bars.forEach(b=>{b.style.height=(Math.random()*28+4)+'px';b.classList.add('on');}),100);}
+  else bars.forEach(b=>{b.style.height='4px';b.classList.remove('on');});
+}
+
+const box    = document.getElementById('box');
+const dot    = document.getElementById('dot');
+const smsg   = document.getElementById('smsg');
+const stimer = document.getElementById('stimer');
+const btnRec = document.getElementById('btn-rec');
+const recIco = document.getElementById('rec-ico');
+const recLbl = document.getElementById('rec-lbl');
+const toast  = document.getElementById('toast');
+const permScreen = document.getElementById('perm-screen');
+const permErr    = document.getElementById('perm-err');
+
+let rec=null, isRec=false, lang='it-IT', fontSize=24, secs=0, timerID=null;
+let micGranted=false;
+
+// ── TESTO: salviamo solo frasi FINALI confermate ──
+let finalSegments = []; // array di frasi complete
+let currentInterim = ''; // testo provvisorio corrente
+
+function fmt(s){return`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+function wc(){
+  const tutto = finalSegments.join(' ') + ' ' + currentInterim;
+  const w = tutto.trim().split(/\s+/).filter(Boolean).length;
+  return `${w} parol${w===1?'a':'e'}`;
+}
+
+function render(){
+  box.innerHTML='';
+  // Testo finale confermato
+  if(finalSegments.length > 0){
+    const f=document.createElement('span');
+    f.className='ft';
+    f.textContent=finalSegments.join(' ')+' ';
+    box.appendChild(f);
+  }
+  // Testo provvisorio in blu
+  if(currentInterim){
+    const i=document.createElement('span');
+    i.className='it';
+    i.textContent=currentInterim;
+    box.appendChild(i);
+  }
+  box.scrollTop=box.scrollHeight;
+}
+
+function setStatus(state,msg){
+  smsg.textContent=msg;
+  dot.className='dot'+(state==='on'?' on':state==='err'?' err':'');
+}
+function showToast(msg){
+  toast.textContent=msg;toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),2200);
+}
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if(!SR){
+  dbg('❌ Browser non supportato');
+  setStatus('err','Usa Samsung Browser o Brave!');
+  btnRec.disabled=true;btnRec.style.opacity='.4';
+} else {
+  dbg('✅ Pronto');
+
+  async function richiediMicrofono(){
+    permScreen.classList.add('show');
+    permErr.style.display='none';
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      stream.getTracks().forEach(t=>t.stop());
+      micGranted=true;
+      permScreen.classList.remove('show');
+      dbg('✅ Microfono OK');
+      setStatus('','Microfono OK — premi Avvia');
+      avviaRiconoscimento();
+    }catch(err){
+      dbg('❌ '+err.name);
+      permErr.textContent='⛔ '+err.message;
+      permErr.style.display='block';
+      setStatus('err','Microfono negato');
+    }
+  }
+
+  document.getElementById('btn-perm').addEventListener('click',richiediMicrofono);
+
+  function build(){
+    const r=new SR();
+    r.continuous=true;
+    r.interimResults=true;
+    r.lang=lang;
+    r.maxAlternatives=1;
+
+    r.onstart=()=>{
+      dbg('🎤 In ascolto');
+      setStatus('on','In ascolto…');
+      animWave(true);
+    };
+
+    r.onresult=e=>{
+      // ── LOGICA CORRETTA: usa solo i risultati NUOVI ──
+      currentInterim='';
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const t=e.results[i][0].transcript.trim();
+        if(e.results[i].isFinal){
+          if(t) finalSegments.push(t); // aggiungi solo frasi nuove
+          currentInterim='';
+        } else {
+          currentInterim=t;
+        }
+      }
+      render();
+      smsg.textContent='In ascolto — '+wc();
+      dbg('📝 '+wc());
+    };
+
+    r.onerror=e=>{
+      dbg('⚠️ '+e.error);
+      if(e.error==='not-allowed'||e.error==='service-not-allowed'){
+        micGranted=false;
+        permErr.textContent='⛔ Permesso negato';
+        permErr.style.display='block';
+        permScreen.classList.add('show');
+        stopRec();
+      } else if(e.error==='network'){
+        setStatus('err','❌ Serve connessione internet');
+        stopRec();
+      }
+      // no-speech: ignora, riprende da solo
+    };
+
+    r.onend=()=>{
+      // Quando si riavvia NON aggiungere nulla — i segmenti sono già salvati
+      if(isRec) setTimeout(()=>{try{r.start();}catch(e){}},200);
+    };
+
+    return r;
+  }
+
+  function avviaRiconoscimento(){
+    try{
+      rec=build(); isRec=true; rec.start();
+      btnRec.classList.add('rec');
+      recLbl.textContent='Interrompi';
+      recIco.textContent='⏹️';
+      secs=0;
+      timerID=setInterval(()=>{secs++;stimer.textContent=fmt(secs);},1000);
+      try{navigator.wakeLock?.request('screen');}catch(e){}
+    }catch(err){
+      dbg('❌ '+err.message);
+      setStatus('err','Errore: '+err.message);
+      isRec=false;
+    }
+  }
+
+  function stopRec(){
+    isRec=false;
+    currentInterim='';
+    try{if(rec){rec.onend=null;rec.stop();}}catch(e){}
+    btnRec.classList.remove('rec');
+    recLbl.textContent='Avvia Ascolto';
+    recIco.textContent='🎙️';
+    setStatus('','Fermato — '+wc());
+    animWave(false);
+    clearInterval(timerID);
+    render();
+  }
+
+  btnRec.addEventListener('click',()=>{
+    if(isRec){stopRec();return;}
+    if(!micGranted){richiediMicrofono();return;}
+    avviaRiconoscimento();
+  });
+}
+
+// Copia
+document.getElementById('btn-cpy').addEventListener('click',()=>{
+  const tutto = finalSegments.join(' ').trim();
+  if(!tutto)return showToast('Nessun testo');
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(tutto).then(()=>showToast('✓ Copiato!')).catch(fb);
+  } else fb();
+  function fb(){
+    const ta=document.createElement('textarea');ta.value=tutto;
+    ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);
+    ta.focus();ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    showToast('✓ Copiato!');
+  }
+});
+
+// Cancella
+document.getElementById('btn-clr').addEventListener('click',()=>{
+  if(isRec)stopRec();
+  finalSegments=[];currentInterim='';
+  box.innerHTML='';
+  secs=0;stimer.textContent='00:00';
+  setStatus('','In attesa…');showToast('Cancellato');
+});
+
+// Lingue
+document.getElementById('langs').addEventListener('click',e=>{
+  const b=e.target.closest('.lang-btn');if(!b)return;
+  document.querySelectorAll('.lang-btn').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');lang=b.dataset.l;
+  if(isRec){stopRec();setTimeout(avviaRiconoscimento,500);}
+});
+
+// Font
+document.getElementById('fu').addEventListener('click',()=>{fontSize=Math.min(48,fontSize+2);box.style.fontSize=fontSize+'px';});
+document.getElementById('fd').addEventListener('click',()=>{fontSize=Math.max(12,fontSize-2);box.style.fontSize=fontSize+'px';});
+</script>
+</body>
+</html>
